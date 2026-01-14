@@ -3,6 +3,7 @@ from rest_framework.response import Response
 from .serializers import InstructorRegisterSerializer
 from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.permissions import IsAuthenticated
 
 class InstructorRegisterView(APIView):
     def post(self, request):
@@ -29,3 +30,14 @@ class InstructorLoginView(APIView):
         return Response({
             "error": "Invalid instructor credentials"
         }, status=400)
+    
+class InstructorDashboardView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        return Response({
+            "username": user.username,
+            "role": user.role,
+            "message": "Welcome to Instructor Dashboard"
+        })    
