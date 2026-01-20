@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Instructor Login | LMS Lite</title>
+    <style>
+        :root {
+          --bg: #0f172a;
+          --card: #020617;
+          --accent: #a78bfa;
+          --accent-soft: rgba(167, 139, 250, 0.15);
+          --text: #e5e7eb;
+          --muted: #9ca3af;
+          --danger: #f97373;
+          --success: #4ade80;
+        }
+
+        * {
+          box-sizing: border-box;
+        }
+
+        body {
+          margin: 0;
+          min-height: 100vh;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: radial-gradient(circle at top, #1e293b, #020617 55%, #000 100%);
+          font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+          color: var(--text);
+        }
+
+        .shell {
+          width: 100%;
+          max-width: 420px;
+          padding: 24px;
+        }
+
+        .card {
+          background: radial-gradient(circle at top left, #0b1120, #020617);
+          border-radius: 18px;
+          border: 1px solid rgba(148, 163, 184, 0.35);
+          box-shadow:
+            0 24px 60px rgba(15, 23, 42, 0.9),
+            0 0 0 1px rgba(15, 23, 42, 0.9);
+          padding: 26px 24px 22px;
+          position: relative;
+          overflow: hidden;
+        }
+
+        .card::before {
+          content: "";
+          position: absolute;
+          inset: 0;
+          background: radial-gradient(circle at 0 0, rgba(167, 139, 250, 0.28), transparent 55%);
+          opacity: 0.9;
+          pointer-events: none;
+        }
+
+        .card-inner {
+          position: relative;
+          z-index: 1;
+        }
+
+        .badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          padding: 4px 10px;
+          border-radius: 999px;
+          background: rgba(15, 23, 42, 0.9);
+          border: 1px solid rgba(148, 163, 184, 0.6);
+          color: var(--muted);
+          font-size: 11px;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+        }
+
+        .badge-dot {
+          width: 7px;
+          height: 7px;
+          border-radius: 99px;
+          background: var(--accent);
+          box-shadow: 0 0 0 4px var(--accent-soft);
+        }
+
+        h1 {
+          margin: 16px 0 6px;
+          font-size: 24px;
+          letter-spacing: -0.03em;
+        }
+
+        .subtitle {
+          margin: 0 0 20px;
+          font-size: 13px;
+          color: var(--muted);
+        }
+
+        .field-group {
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+          margin-bottom: 12px;
+        }
+
+        label {
+          font-size: 12px;
+          color: var(--muted);
+        }
+
+        input {
+          width: 100%;
+          padding: 9px 10px;
+          border-radius: 9px;
+          border: 1px solid rgba(148, 163, 184, 0.55);
+          background: rgba(15, 23, 42, 0.9);
+          color: var(--text);
+          font-size: 13px;
+          outline: none;
+          transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+        }
+
+        input:focus {
+          border-color: var(--accent);
+          box-shadow: 0 0 0 1px var(--accent-soft), 0 0 0 4px rgba(15, 23, 42, 0.85);
+          background: #020617;
+        }
+
+        .hint {
+          font-size: 11px;
+          color: var(--muted);
+        }
+
+        .messages {
+          margin: 8px 0 12px;
+          font-size: 12px;
+          list-style: none;
+          padding: 0;
+        }
+
+        .msg {
+          padding: 7px 10px;
+          border-radius: 8px;
+          border: 1px solid rgba(148, 163, 184, 0.6);
+          background: rgba(15, 23, 42, 0.85);
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+
+        .msg.error {
+          border-color: rgba(248, 113, 113, 0.85);
+          background: rgba(30, 64, 175, 0.6);
+        }
+
+        .msg.success {
+          border-color: rgba(74, 222, 128, 0.9);
+          background: rgba(22, 163, 74, 0.5);
+        }
+
+        .msg-dot {
+          width: 8px;
+          height: 8px;
+          border-radius: 999px;
+        }
+
+        .msg.error .msg-dot {
+          background: var(--danger);
+        }
+
+        .msg.success .msg-dot {
+          background: var(--success);
+        }
+
+        .actions {
+          margin-top: 14px;
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+        }
+
+        button {
+          border: none;
+          outline: none;
+          cursor: pointer;
+          border-radius: 999px;
+          padding: 9px 12px;
+          font-size: 13px;
+          font-weight: 500;
+          letter-spacing: 0.03em;
+          text-transform: uppercase;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 6px;
+          color: #0b1120;
+          background: radial-gradient(circle at top left, #a78bfa, #8b5cf6);
+          box-shadow:
+            0 12px 30px rgba(167, 139, 250, 0.55),
+            0 0 0 1px rgba(15, 23, 42, 0.6);
+          transition: transform 0.1s ease, box-shadow 0.1s ease, filter 0.1s ease;
+        }
+
+        button:hover {
+          transform: translateY(-1px);
+          filter: brightness(1.03);
+          box-shadow:
+            0 16px 40px rgba(167, 139, 250, 0.7),
+            0 0 0 1px rgba(15, 23, 42, 0.7);
+        }
+
+        button:active {
+          transform: translateY(0);
+          box-shadow:
+            0 8px 18px rgba(167, 139, 250, 0.5),
+            0 0 0 1px rgba(15, 23, 42, 0.9);
+        }
+
+        .button-sub {
+          font-size: 11px;
+          color: var(--muted);
+          text-align: center;
+        }
+
+        .footer {
+          margin-top: 14px;
+          font-size: 11px;
+          text-align: center;
+          color: var(--muted);
+        }
+
+        .footer strong {
+          color: var(--accent);
+          font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+  <div class="shell">
+    <div class="card">
+      <div class="card-inner">
+        <div class="badge">
+          <span class="badge-dot"></span>
+          INSTRUCTOR ACCESS
+        </div>
+        <h1>Sign in to LMS Lite</h1>
+        <p class="subtitle">
+          Login as an <strong>instructor</strong> using your username or email.
+        </p>
+
+        {% if messages %}
+          <ul class="messages">
+            {% for message in messages %}
+              <li class="msg {% if message.tags %}{{ message.tags }}{% endif %}">
+                <span class="msg-dot"></span>
+                <span>{{ message }}</span>
+              </li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+
+        <form method="post" action="">
+          {% csrf_token %}
+
+          <div class="field-group">
+            <label for="id_username">Username / Email</label>
+            <input
+              id="id_username"
+              name="username"
+              type="text"
+              placeholder="e.g. instructor1 or instructor@lms.com"
+              required
+            />
+            <div class="hint">
+              Use your instructor username or email address
+            </div>
+          </div>
+
+          <div class="field-group">
+            <label for="id_password">Password</label>
+            <input
+              id="id_password"
+              name="password"
+              type="password"
+              placeholder="Enter your password"
+              required
+            />
+          </div>
+
+          <div class="actions">
+            <button type="submit">
+              <span>Login as Instructor</span>
+            </button>
+            <div class="button-sub">
+              Session-based login. API tokens are still available via
+              <code>/api/auth/instructor/login/</code>.
+            </div>
+          </div>
+        </form>
+
+        <div class="footer">
+          API endpoint: <strong>/api/auth/instructor/login/</strong>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

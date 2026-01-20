@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Instructor Dashboard | LMS Lite</title>
+  <style>
+    :root {
+      --bg: #020617;
+      --card: #0b1120;
+      --accent: #a78bfa;
+      --accent-soft: rgba(167, 139, 250, 0.25);
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(circle at top, #1f2937, var(--bg) 55%, #000 100%);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--text);
+    }
+
+    .shell {
+      width: 100%;
+      max-width: 900px;
+      padding: 24px;
+    }
+
+    .card {
+      border-radius: 18px;
+      background: radial-gradient(circle at top left, #020617, var(--card));
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      box-shadow:
+        0 24px 70px rgba(15, 23, 42, 0.9),
+        0 0 0 1px rgba(15, 23, 42, 0.9);
+      padding: 22px 22px 20px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(circle at -10% 0, rgba(167, 139, 250, 0.35), transparent 55%),
+        radial-gradient(circle at 110% 110%, rgba(167, 139, 250, 0.15), transparent 55%);
+      opacity: 0.9;
+      pointer-events: none;
+    }
+
+    .inner {
+      position: relative;
+      z-index: 1;
+    }
+
+    .eyebrow {
+      font-size: 11px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--muted);
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 4px;
+    }
+
+    .eyebrow-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 999px;
+      background: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-soft);
+    }
+
+    h1 {
+      margin: 0 0 4px;
+      font-size: 24px;
+      letter-spacing: -0.03em;
+    }
+
+    .subtitle {
+      margin: 0 0 18px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .pill-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .pill {
+      padding: 5px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.6);
+      background: rgba(15, 23, 42, 0.85);
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .stat {
+      border-radius: 12px;
+      padding: 10px 11px;
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid rgba(148, 163, 184, 0.45);
+      font-size: 12px;
+    }
+
+    .stat-label {
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+
+    .stat-value {
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .courses-section {
+      margin-top: 20px;
+    }
+
+    .section-title {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 10px;
+      color: var(--text);
+    }
+
+    .course-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .course-item {
+      padding: 10px 12px;
+      margin-bottom: 8px;
+      border-radius: 10px;
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid rgba(148, 163, 184, 0.3);
+      font-size: 13px;
+    }
+
+    .course-item strong {
+      color: var(--accent);
+    }
+
+    .course-meta {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    .footer {
+      margin-top: 20px;
+      font-size: 11px;
+      color: var(--muted);
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <div class="card">
+      <div class="inner">
+        <div class="eyebrow">
+          <span class="eyebrow-dot"></span>
+          INSTRUCTOR DASHBOARD
+        </div>
+        <h1>Welcome, {{ instructor.first_name|default:instructor.username }} 👋</h1>
+        <p class="subtitle">
+          You're now logged in as an <strong>instructor</strong>. This is a simple HTML landing page;
+          the real data API is at <code>/api/reports/dashboard/</code>.
+        </p>
+
+        <div class="pill-row">
+          <span class="pill">Role: instructor</span>
+          <span class="pill">User ID: {{ instructor.id }}</span>
+          <span class="pill">Username: {{ instructor.username }}</span>
+        </div>
+
+        <div class="grid">
+          <div class="stat">
+            <div class="stat-label">Total Courses</div>
+            <div class="stat-value">{{ total_courses }}</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">Published Courses</div>
+            <div class="stat-value">{{ published_courses }}</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">Total Enrollments</div>
+            <div class="stat-value">{{ total_enrollments }}</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">Active Enrollments</div>
+            <div class="stat-value">{{ active_enrollments }}</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">Completed</div>
+            <div class="stat-value">{{ completed_enrollments }}</div>
+          </div>
+        </div>
+
+        {% if courses %}
+          <div class="courses-section">
+            <div class="section-title">Your Courses</div>
+            <ul class="course-list">
+              {% for course in courses %}
+                <li class="course-item">
+                  <strong>{{ course.title }}</strong>
+                  <div class="course-meta">
+                    {% if course.is_published %}
+                      <span style="color: #4ade80;">● Published</span>
+                    {% else %}
+                      <span style="color: var(--muted);">● Draft</span>
+                    {% endif %}
+                    • {{ course.difficulty_level|capfirst }} • Created: {{ course.created_at|date:"M d, Y" }}
+                    {% if course.description %}
+                      <br>{{ course.description|truncatechars:100 }}
+                    {% endif %}
+                  </div>
+                </li>
+              {% endfor %}
+            </ul>
+          </div>
+        {% else %}
+          <div style="margin-top: 12px; font-size: 12px; color: var(--muted);">
+            You haven't created any courses yet.
+          </div>
+        {% endif %}
+
+        <div class="footer">
+          <span>
+            To test the JSON dashboard, call
+            <code>GET /api/reports/dashboard/</code> with your access token.
+          </span>
+          <span>
+            Go back to <a href="/instructor/login/">instructor login</a>.
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
