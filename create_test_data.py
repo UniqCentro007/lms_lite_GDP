@@ -10,6 +10,9 @@ django.setup()
 from accounts.models import User
 from courses.models import Course, Module, Lesson
 from quizzes.models import Quiz, Question, Choice
+from enrollments.models import Enrollment, Progress
+from django.utils import timezone
+from datetime import timedelta
 
 # Create test users
 print("Creating test users...")
@@ -29,9 +32,9 @@ admin, created = User.objects.get_or_create(
 if created:
     admin.set_password('admin123')
     admin.save()
-    print(f"✅ Created admin user: {admin.username}")
+    print(f"[OK] Created admin user: {admin.username}")
 else:
-    print(f"ℹ️  Admin user already exists: {admin.username}")
+    print(f"[INFO] Admin user already exists: {admin.username}")
 
 # Create instructor
 instructor, created = User.objects.get_or_create(
@@ -46,185 +49,215 @@ instructor, created = User.objects.get_or_create(
 if created:
     instructor.set_password('instructor123')
     instructor.save()
-    print(f"✅ Created instructor: {instructor.username}")
+    print(f"[OK] Created instructor: {instructor.username}")
 else:
-    print(f"ℹ️  Instructor already exists: {instructor.username}")
+    print(f"[INFO] Instructor already exists: {instructor.username}")
 
-# Create student
-student, created = User.objects.get_or_create(
-    username='student1',
-    defaults={
-        'email': 'student@lms.com',
-        'first_name': 'Jane',
-        'last_name': 'Student',
-        'role': 'student'
-    }
-)
-if created:
-    student.set_password('student123')
-    student.save()
-    print(f"✅ Created student: {student.username}")
-else:
-    print(f"ℹ️  Student already exists: {student.username}")
+# Create students
+students = []
+for i in range(1, 6):  # Create 5 students
+    student, created = User.objects.get_or_create(
+        username=f'student{i}',
+        defaults={
+            'email': f'student{i}@lms.com',
+            'first_name': f'Student{i}',
+            'last_name': 'User',
+            'role': 'student'
+        }
+    )
+    if created:
+        student.set_password('student123')
+        student.save()
+        print(f"[OK] Created student: {student.username}")
+    else:
+        print(f"[INFO] Student already exists: {student.username}")
+    students.append(student)
 
-# Create a test course
-print("\nCreating test course...")
-course, created = Course.objects.get_or_create(
-    title='Introduction to Python Programming',
-    defaults={
-        'instructor': instructor,
+# Create multiple test courses
+print("\nCreating test courses...")
+courses_data = [
+    {
+        'title': 'Introduction to Python Programming',
         'description': 'Learn Python programming from scratch. This course covers basics to intermediate concepts.',
         'difficulty_level': 'beginner',
         'duration_hours': 20,
         'price': 0.00,
         'is_published': True
+    },
+    {
+        'title': 'Advanced Web Development',
+        'description': 'Master modern web development with Django, React, and REST APIs.',
+        'difficulty_level': 'intermediate',
+        'duration_hours': 40,
+        'price': 99.99,
+        'is_published': True
+    },
+    {
+        'title': 'Data Science Fundamentals',
+        'description': 'Introduction to data science with Python, pandas, and matplotlib.',
+        'difficulty_level': 'intermediate',
+        'duration_hours': 30,
+        'price': 79.99,
+        'is_published': True
+    },
+    {
+        'title': 'Machine Learning Basics',
+        'description': 'Learn the fundamentals of machine learning and neural networks.',
+        'difficulty_level': 'advanced',
+        'duration_hours': 50,
+        'price': 149.99,
+        'is_published': False
     }
-)
-if created:
-    print(f"✅ Created course: {course.title}")
-else:
-    print(f"ℹ️  Course already exists: {course.title}")
+]
 
-# Create modules
-print("\nCreating modules...")
-module1, _ = Module.objects.get_or_create(
-    course=course,
-    order=1,
-    defaults={
-        'title': 'Getting Started',
-        'description': 'Introduction to Python and setup'
-    }
-)
-print(f"✅ Module 1: {module1.title}")
+courses = []
+for course_data in courses_data:
+    course, created = Course.objects.get_or_create(
+        title=course_data['title'],
+        defaults={
+            'instructor': instructor,
+            **course_data
+        }
+    )
+    if created:
+        print(f"[OK] Created course: {course.title}")
+    else:
+        print(f"[INFO] Course already exists: {course.title}")
+    courses.append(course)
 
-module2, _ = Module.objects.get_or_create(
-    course=course,
-    order=2,
-    defaults={
-        'title': 'Python Basics',
-        'description': 'Variables, data types, and basic operations'
-    }
-)
-print(f"✅ Module 2: {module2.title}")
-
-# Create lessons
-print("\nCreating lessons...")
-lesson1, _ = Lesson.objects.get_or_create(
-    module=module1,
-    order=1,
-    defaults={
-        'title': 'What is Python?',
-        'description': 'Introduction to Python programming language',
-        'content_type': 'text',
-        'text_content': 'Python is a high-level, interpreted programming language known for its simplicity and readability.',
-        'duration_minutes': 15,
-        'is_free': True
-    }
-)
-print(f"✅ Lesson 1: {lesson1.title}")
-
-lesson2, _ = Lesson.objects.get_or_create(
-    module=module1,
-    order=2,
-    defaults={
-        'title': 'Installing Python',
-        'description': 'How to install Python on your system',
-        'content_type': 'text',
-        'text_content': 'Download Python from python.org and follow the installation instructions for your operating system.',
-        'duration_minutes': 10,
-        'is_free': True
-    }
-)
-print(f"✅ Lesson 2: {lesson2.title}")
-
-lesson3, _ = Lesson.objects.get_or_create(
-    module=module2,
-    order=1,
-    defaults={
-        'title': 'Variables and Data Types',
-        'description': 'Learn about variables and different data types in Python',
-        'content_type': 'text',
-        'text_content': 'Python supports various data types including integers, floats, strings, lists, and dictionaries.',
-        'duration_minutes': 20,
-        'is_free': False
-    }
-)
-print(f"✅ Lesson 3: {lesson3.title}")
-
-# Create quiz
-print("\nCreating quiz...")
-quiz, created = Quiz.objects.get_or_create(
-    course=course,
-    defaults={
-        'title': 'Python Basics Quiz',
-        'description': 'Test your knowledge of Python basics',
-        'time_limit_minutes': 30,
-        'passing_score': 70,
-        'max_attempts': 3,
-        'is_active': True
-    }
-)
-if created:
-    print(f"✅ Created quiz: {quiz.title}")
-    
-    # Create questions
-    print("\nCreating quiz questions...")
-    
-    # Question 1 - Multiple Choice
-    q1, _ = Question.objects.get_or_create(
-        quiz=quiz,
+# Create modules and lessons for each course
+print("\nCreating modules and lessons...")
+for course in courses:
+    # Create modules for each course
+    module1, _ = Module.objects.get_or_create(
+        course=course,
         order=1,
         defaults={
-            'question_text': 'What is Python?',
-            'question_type': 'multiple_choice',
-            'points': 1
+            'title': f'{course.title.split()[0]} - Module 1',
+            'description': f'First module of {course.title}'
         }
     )
-    Choice.objects.get_or_create(question=q1, choice_text='A programming language', is_correct=True, order=1)
-    Choice.objects.get_or_create(question=q1, choice_text='A snake', is_correct=False, order=2)
-    Choice.objects.get_or_create(question=q1, choice_text='A database', is_correct=False, order=3)
-    print(f"✅ Question 1: {q1.question_text}")
     
-    # Question 2 - True/False
-    q2, _ = Question.objects.get_or_create(
-        quiz=quiz,
+    module2, _ = Module.objects.get_or_create(
+        course=course,
         order=2,
         defaults={
-            'question_text': 'Python is a compiled language.',
-            'question_type': 'true_false',
-            'points': 1
+            'title': f'{course.title.split()[0]} - Module 2',
+            'description': f'Second module of {course.title}'
         }
     )
-    Choice.objects.get_or_create(question=q2, choice_text='True', is_correct=False, order=1)
-    Choice.objects.get_or_create(question=q2, choice_text='False', is_correct=True, order=2)
-    print(f"✅ Question 2: {q2.question_text}")
     
-    # Question 3 - Short Answer
-    q3, _ = Question.objects.get_or_create(
-        quiz=quiz,
-        order=3,
-        defaults={
-            'question_text': 'What keyword is used to define a function in Python?',
-            'question_type': 'short_answer',
-            'points': 1
-        }
-    )
-    Choice.objects.get_or_create(question=q3, choice_text='def', is_correct=True, order=1)
-    print(f"✅ Question 3: {q3.question_text}")
-else:
-    print(f"ℹ️  Quiz already exists: {quiz.title}")
+    # Create lessons for each module
+    for module in [module1, module2]:
+        for i in range(1, 3):
+            Lesson.objects.get_or_create(
+                module=module,
+                order=i,
+                defaults={
+                    'title': f'{module.title} - Lesson {i}',
+                    'description': f'Lesson {i} content',
+                    'content_type': 'text',
+                    'text_content': f'This is lesson {i} content for {module.title}.',
+                    'duration_minutes': 15 + (i * 5),
+                    'is_free': i == 1
+                }
+            )
+    print(f"[OK] Created modules and lessons for: {course.title}")
+
+# Create quizzes for published courses
+print("\nCreating quizzes...")
+for course in courses:
+    if course.is_published:
+        quiz, created = Quiz.objects.get_or_create(
+            course=course,
+            defaults={
+                'title': f'{course.title} Quiz',
+                'description': f'Test your knowledge of {course.title}',
+                'time_limit_minutes': 30,
+                'passing_score': 70,
+                'max_attempts': 3,
+                'is_active': True
+            }
+        )
+        if created:
+            # Create a simple question for each quiz
+            q1, _ = Question.objects.get_or_create(
+                quiz=quiz,
+                order=1,
+                defaults={
+                    'question_text': f'What is the main topic of {course.title}?',
+                    'question_type': 'multiple_choice',
+                    'points': 1
+                }
+            )
+            Choice.objects.get_or_create(question=q1, choice_text='Correct Answer', is_correct=True, order=1)
+            Choice.objects.get_or_create(question=q1, choice_text='Wrong Answer 1', is_correct=False, order=2)
+            Choice.objects.get_or_create(question=q1, choice_text='Wrong Answer 2', is_correct=False, order=3)
+            print(f"[OK] Created quiz: {quiz.title}")
+
+# Create enrollments
+print("\nCreating enrollments...")
+enrollment_count = 0
+for course in courses:
+    if course.is_published:
+        # Enroll different numbers of students in each course
+        num_enrollments = len(students) if course == courses[0] else len(students) - 1
+        for i, student in enumerate(students[:num_enrollments]):
+            enrollment, created = Enrollment.objects.get_or_create(
+                student=student,
+                course=course,
+                defaults={
+                    'enrolled_at': timezone.now() - timedelta(days=30-i*5),
+                    'is_completed': i < 2  # First 2 students completed
+                }
+            )
+            if created:
+                enrollment_count += 1
+                # Create some progress for enrolled students
+                if enrollment.is_completed:
+                    enrollment.completed_at = timezone.now() - timedelta(days=5-i)
+                    enrollment.save()
+                    # Mark all lessons as completed
+                    for module in course.modules.all():
+                        for lesson in module.lessons.all():
+                            Progress.objects.get_or_create(
+                                enrollment=enrollment,
+                                lesson=lesson,
+                                defaults={
+                                    'is_completed': True,
+                                    'completed_at': timezone.now() - timedelta(days=5-i),
+                                    'time_spent_minutes': lesson.duration_minutes
+                                }
+                            )
+                else:
+                    # Mark some lessons as completed for active enrollments
+                    for module in course.modules.all():
+                        for j, lesson in enumerate(module.lessons.all()):
+                            if j < 1:  # Complete first lesson only
+                                Progress.objects.get_or_create(
+                                    enrollment=enrollment,
+                                    lesson=lesson,
+                                    defaults={
+                                        'is_completed': True,
+                                        'completed_at': timezone.now() - timedelta(days=2),
+                                        'time_spent_minutes': lesson.duration_minutes
+                                    }
+                                )
+print(f"[OK] Created {enrollment_count} enrollments")
 
 print("\n" + "="*50)
-print("✅ Test data creation complete!")
+print("[OK] Test data creation complete!")
 print("="*50)
 print("\nTest Users:")
 print(f"  Admin:      username=admin,      password=admin123")
 print(f"  Instructor: username=instructor1, password=instructor123")
-print(f"  Student:    username=student1,    password=student123")
-print(f"\nTest Course: {course.title}")
-print(f"  Modules: {course.modules.count()}")
-print(f"  Lessons: {course.total_lessons}")
-print(f"  Quiz: {quiz.title if hasattr(course, 'quiz') else 'None'}")
+print(f"  Students:   username=student1-5,  password=student123")
+print(f"\nTest Courses: {len(courses)}")
+for course in courses:
+    print(f"  - {course.title} ({'Published' if course.is_published else 'Draft'})")
+    print(f"    Modules: {course.modules.count()}, Lessons: {course.total_lessons}")
+    enrollments = Enrollment.objects.filter(course=course).count()
+    print(f"    Enrollments: {enrollments}")
 
 
 

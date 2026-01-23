@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Take Quiz: {{ quiz.title }} | LMS Lite</title>
+  <style>
+    :root {
+      --bg: #020617;
+      --card: #0b1120;
+      --accent: #38bdf8;
+      --accent-soft: rgba(56, 189, 248, 0.25);
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --success: #4ade80;
+      --warning: #fbbf24;
+      --danger: #f97373;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      padding: 24px;
+      background: radial-gradient(circle at top, #1f2937, var(--bg) 55%, #000 100%);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--text);
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .card {
+      border-radius: 18px;
+      background: radial-gradient(circle at top left, #020617, var(--card));
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      box-shadow:
+        0 24px 70px rgba(15, 23, 42, 0.9),
+        0 0 0 1px rgba(15, 23, 42, 0.9);
+      padding: 24px;
+      position: relative;
+      overflow: hidden;
+      margin-bottom: 24px;
+    }
+
+    .card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(circle at -10% 0, rgba(56, 189, 248, 0.35), transparent 55%),
+        radial-gradient(circle at 110% 110%, rgba(56, 189, 248, 0.15), transparent 55%);
+      opacity: 0.9;
+      pointer-events: none;
+    }
+
+    .inner {
+      position: relative;
+      z-index: 1;
+    }
+
+    .quiz-header {
+      margin-bottom: 24px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+    }
+
+    .quiz-title {
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      background: linear-gradient(135deg, var(--text), var(--accent));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .quiz-info {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 12px;
+    }
+
+    .info-item {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .timer {
+      position: sticky;
+      top: 20px;
+      background: rgba(15, 23, 42, 0.95);
+      border: 2px solid var(--accent);
+      border-radius: 12px;
+      padding: 12px 20px;
+      text-align: center;
+      margin-bottom: 20px;
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .timer.warning {
+      border-color: var(--warning);
+      color: var(--warning);
+    }
+
+    .timer.danger {
+      border-color: var(--danger);
+      color: var(--danger);
+      animation: pulse 1s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
+    }
+
+    .question-card {
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid rgba(148, 163, 184, 0.3);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+      transition: all 0.3s ease;
+    }
+
+    .question-card:hover {
+      border-color: var(--accent);
+      box-shadow: 0 4px 16px rgba(56, 189, 248, 0.15);
+    }
+
+    .question-number {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    .question-text {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 16px;
+      line-height: 1.5;
+    }
+
+    .question-points {
+      display: inline-block;
+      padding: 2px 8px;
+      background: rgba(56, 189, 248, 0.2);
+      color: var(--accent);
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 600;
+      margin-left: 8px;
+    }
+
+    .choices {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .choice-item {
+      padding: 12px 16px;
+      background: rgba(15, 23, 42, 0.5);
+      border: 2px solid rgba(148, 163, 184, 0.3);
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .choice-item:hover {
+      border-color: var(--accent);
+      background: rgba(56, 189, 248, 0.1);
+    }
+
+    .choice-item input[type="radio"],
+    .choice-item input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+      accent-color: var(--accent);
+    }
+
+    .choice-item.selected {
+      border-color: var(--accent);
+      background: rgba(56, 189, 248, 0.15);
+    }
+
+    .short-answer-input {
+      width: 100%;
+      padding: 12px;
+      background: rgba(15, 23, 42, 0.5);
+      border: 2px solid rgba(148, 163, 184, 0.3);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 14px;
+      transition: all 0.2s ease;
+    }
+
+    .short-answer-input:focus {
+      outline: none;
+      border-color: var(--accent);
+      background: rgba(15, 23, 42, 0.7);
+    }
+
+    .submit-section {
+      position: sticky;
+      bottom: 20px;
+      background: rgba(15, 23, 42, 0.95);
+      border: 1px solid rgba(148, 163, 184, 0.3);
+      border-radius: 12px;
+      padding: 20px;
+      margin-top: 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      padding: 12px 24px;
+      border-radius: 8px;
+      border: none;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-decoration: none;
+      display: inline-block;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent), #0ea5e9);
+      color: #0b1120;
+      box-shadow: 0 4px 12px rgba(56, 189, 248, 0.3);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(56, 189, 248, 0.4);
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .btn-secondary {
+      background: rgba(148, 163, 184, 0.2);
+      color: var(--muted);
+      border: 1px solid rgba(148, 163, 184, 0.3);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(148, 163, 184, 0.3);
+    }
+
+    .result-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.8);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .result-modal.active {
+      display: flex;
+    }
+
+    .result-content {
+      background: var(--card);
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      border-radius: 18px;
+      padding: 32px;
+      max-width: 500px;
+      width: 100%;
+      text-align: center;
+    }
+
+    .result-icon {
+      font-size: 64px;
+      margin-bottom: 16px;
+    }
+
+    .result-title {
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 16px;
+    }
+
+    .result-score {
+      font-size: 48px;
+      font-weight: 700;
+      margin: 16px 0;
+      background: linear-gradient(135deg, var(--accent), #0ea5e9);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .result-passed {
+      color: var(--success);
+    }
+
+    .result-failed {
+      color: var(--danger);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <div class="inner">
+        <div class="quiz-header">
+          <div class="quiz-title">{{ quiz.title }}</div>
+          {% if quiz.description %}
+            <div style="color: var(--muted); font-size: 14px; margin-top: 8px;">
+              {{ quiz.description }}
+            </div>
+          {% endif %}
+          <div class="quiz-info">
+            <div class="info-item">
+              <span>📝</span>
+              <span>Attempt {{ attempt_number }}{% if max_attempts > 0 %} of {{ max_attempts }}{% endif %}</span>
+            </div>
+            {% if time_limit > 0 %}
+              <div class="info-item">
+                <span>⏱️</span>
+                <span>Time Limit: <span id="time-limit-display">{{ time_limit }}</span> minutes</span>
+              </div>
+            {% endif %}
+            <div class="info-item">
+              <span>📊</span>
+              <span>Passing Score: {{ quiz.passing_score }}%</span>
+            </div>
+            <div class="info-item">
+              <span>📚</span>
+              <span>Course: {{ quiz.course.title }}</span>
+            </div>
+          </div>
+        </div>
+
+        {% if time_limit > 0 %}
+          <div class="timer" id="timer">
+            Time Remaining: <span id="timer-display">{{ time_limit }}:00</span>
+          </div>
+        {% endif %}
+
+        <form id="quiz-form">
+          {% csrf_token %}
+          {% for question in questions %}
+            <div class="question-card">
+              <div class="question-number">
+                Question {{ forloop.counter }} of {{ questions|length }}
+                <span class="question-points">{{ question.points }} point{{ question.points|pluralize }}</span>
+              </div>
+              <div class="question-text">{{ question.text }}</div>
+              
+              {% if question.type == 'multiple_choice' or question.type == 'true_false' %}
+                <div class="choices">
+                  {% for choice in question.choices %}
+                    <label class="choice-item">
+                      <input 
+                        type="radio" 
+                        name="question_{{ question.id }}" 
+                        value="{{ choice.id }}"
+                        required
+                      />
+                      <span>{{ choice.text }}</span>
+                    </label>
+                  {% endfor %}
+                </div>
+              {% elif question.type == 'short_answer' %}
+                <input 
+                  type="text" 
+                  name="question_{{ question.id }}" 
+                  class="short-answer-input"
+                  placeholder="Enter your answer"
+                  required
+                />
+              {% endif %}
+            </div>
+          {% endfor %}
+
+          <div class="submit-section">
+            <div style="font-size: 12px; color: var(--muted);">
+              Make sure to answer all questions before submitting.
+            </div>
+            <div style="display: flex; gap: 12px;">
+              <a href="{% url 'student_dashboard_page' %}" class="btn btn-secondary">Cancel</a>
+              <button type="submit" class="btn btn-primary" id="submit-btn">Submit Quiz</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="result-modal" id="result-modal">
+    <div class="result-content">
+      <div class="result-icon" id="result-icon">📊</div>
+      <div class="result-title" id="result-title">Quiz Submitted!</div>
+      <div class="result-score" id="result-score">0%</div>
+      <div id="result-message" style="color: var(--muted); margin-bottom: 24px;"></div>
+      <a href="{% url 'student_dashboard_page' %}" class="btn btn-primary">Back to Dashboard</a>
+    </div>
+  </div>
+
+  <script>
+    const quizForm = document.getElementById('quiz-form');
+    const submitBtn = document.getElementById('submit-btn');
+    const resultModal = document.getElementById('result-modal');
+    const startTime = Date.now();
+    
+    {% if time_limit > 0 %}
+    // Timer functionality
+    let timeRemaining = {{ time_limit }} * 60; // Convert to seconds
+    const timerDisplay = document.getElementById('timer-display');
+    const timer = document.getElementById('timer');
+    
+    function updateTimer() {
+      const minutes = Math.floor(timeRemaining / 60);
+      const seconds = timeRemaining % 60;
+      timerDisplay.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+      
+      if (timeRemaining <= 60) {
+        timer.classList.add('danger');
+      } else if (timeRemaining <= 300) {
+        timer.classList.add('warning');
+      }
+      
+      if (timeRemaining <= 0) {
+        clearInterval(timerInterval);
+        submitQuiz(true);
+      } else {
+        timeRemaining--;
+      }
+    }
+    
+    const timerInterval = setInterval(updateTimer, 1000);
+    updateTimer();
+    {% endif %}
+
+    // Handle choice selection
+    document.querySelectorAll('.choice-item').forEach(item => {
+      item.addEventListener('click', function(e) {
+        if (e.target.type !== 'radio' && e.target.type !== 'checkbox') {
+          const input = this.querySelector('input[type="radio"], input[type="checkbox"]');
+          if (input) {
+            input.checked = true;
+            document.querySelectorAll('.choice-item').forEach(ci => ci.classList.remove('selected'));
+            this.classList.add('selected');
+          }
+        } else {
+          document.querySelectorAll('.choice-item').forEach(ci => ci.classList.remove('selected'));
+          if (e.target.checked) {
+            this.classList.add('selected');
+          }
+        }
+      });
+    });
+
+    // Handle form submission
+    quizForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+      submitQuiz(false);
+    });
+
+    function submitQuiz(autoSubmit = false) {
+      if (autoSubmit) {
+        if (!confirm('Time is up! Your quiz will be submitted automatically.')) {
+          return;
+        }
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Submitting...';
+
+      // Collect answers
+      const answers = {};
+      const formData = new FormData(quizForm);
+      
+      for (const [key, value] of formData.entries()) {
+        if (key.startsWith('question_')) {
+          const questionId = key.replace('question_', '');
+          answers[questionId] = value;
+        }
+      }
+
+      // Calculate time taken
+      const timeTaken = Math.floor((Date.now() - startTime) / 60000); // Convert to minutes
+
+      // Get CSRF token
+      const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || 
+                       document.cookie.match(/csrftoken=([^;]+)/)?.[1] || '';
+      
+      // Submit to server
+      fetch('{% url "submit_quiz" quiz.id %}', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrftoken
+        },
+        body: JSON.stringify({
+          answers: answers,
+          time_taken_minutes: timeTaken
+        })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          showResult(data);
+        } else {
+          alert('Error: ' + (data.error || 'Failed to submit quiz'));
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Submit Quiz';
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while submitting the quiz.');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Submit Quiz';
+      });
+    }
+
+    function showResult(data) {
+      const resultIcon = document.getElementById('result-icon');
+      const resultTitle = document.getElementById('result-title');
+      const resultScore = document.getElementById('result-score');
+      const resultMessage = document.getElementById('result-message');
+
+      resultScore.textContent = data.percentage.toFixed(1) + '%';
+      
+      if (data.is_passed) {
+        resultIcon.textContent = '🎉';
+        resultTitle.textContent = 'Congratulations!';
+        resultTitle.className = 'result-title result-passed';
+        resultMessage.textContent = `You passed the quiz with a score of ${data.percentage.toFixed(1)}%!`;
+        resultMessage.style.color = 'var(--success)';
+      } else {
+        resultIcon.textContent = '📝';
+        resultTitle.textContent = 'Quiz Completed';
+        resultTitle.className = 'result-title result-failed';
+        resultMessage.textContent = `Your score is ${data.percentage.toFixed(1)}%. You need ${data.passing_score}% to pass.`;
+        resultMessage.style.color = 'var(--danger)';
+      }
+
+      resultModal.classList.add('active');
+    }
+  </script>
+</body>
+</html>

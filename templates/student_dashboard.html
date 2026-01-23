@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Student Dashboard | LMS Lite</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <style>
     :root {
       --bg: #020617;
@@ -12,6 +13,9 @@
       --accent-soft: rgba(56, 189, 248, 0.25);
       --text: #e5e7eb;
       --muted: #9ca3af;
+      --success: #4ade80;
+      --warning: #fbbf24;
+      --danger: #f97373;
     }
 
     * {
@@ -21,18 +25,19 @@
     body {
       margin: 0;
       min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      padding: 24px;
       background: radial-gradient(circle at top, #1f2937, var(--bg) 55%, #000 100%);
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       color: var(--text);
     }
 
-    .shell {
-      width: 100%;
-      max-width: 720px;
-      padding: 24px;
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .header {
+      margin-bottom: 24px;
     }
 
     .card {
@@ -42,9 +47,18 @@
       box-shadow:
         0 24px 70px rgba(15, 23, 42, 0.9),
         0 0 0 1px rgba(15, 23, 42, 0.9);
-      padding: 22px 22px 20px;
+      padding: 24px;
       position: relative;
       overflow: hidden;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      margin-bottom: 24px;
+    }
+
+    .card:hover {
+      transform: translateY(-2px);
+      box-shadow:
+        0 28px 80px rgba(15, 23, 42, 0.95),
+        0 0 0 1px rgba(56, 189, 248, 0.3);
     }
 
     .card::before {
@@ -71,7 +85,7 @@
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      margin-bottom: 4px;
+      margin-bottom: 8px;
     }
 
     .eyebrow-dot {
@@ -80,16 +94,26 @@
       border-radius: 999px;
       background: var(--accent);
       box-shadow: 0 0 0 3px var(--accent-soft);
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
     }
 
     h1 {
-      margin: 0 0 4px;
-      font-size: 24px;
+      margin: 0 0 8px;
+      font-size: 28px;
       letter-spacing: -0.03em;
+      background: linear-gradient(135deg, var(--text), var(--accent));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
     }
 
     .subtitle {
-      margin: 0 0 18px;
+      margin: 0 0 20px;
       font-size: 13px;
       color: var(--muted);
     }
@@ -98,45 +122,270 @@
       display: flex;
       flex-wrap: wrap;
       gap: 8px;
-      margin-bottom: 16px;
+      margin-bottom: 20px;
     }
 
     .pill {
-      padding: 5px 10px;
+      padding: 6px 12px;
       border-radius: 999px;
       border: 1px solid rgba(148, 163, 184, 0.6);
       background: rgba(15, 23, 42, 0.85);
       font-size: 11px;
       color: var(--muted);
+      transition: all 0.2s ease;
     }
 
-    .grid {
+    .pill:hover {
+      border-color: var(--accent);
+      background: rgba(56, 189, 248, 0.1);
+      color: var(--accent);
+    }
+
+    .stats-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-      gap: 10px;
-      margin-bottom: 14px;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
     }
 
-    .stat {
+    .stat-card {
       border-radius: 12px;
-      padding: 10px 11px;
+      padding: 16px;
       background: rgba(15, 23, 42, 0.85);
       border: 1px solid rgba(148, 163, 184, 0.45);
-      font-size: 12px;
+      transition: all 0.3s ease;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .stat-card::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(56, 189, 248, 0.1), transparent);
+      transition: left 0.5s ease;
+    }
+
+    .stat-card:hover::before {
+      left: 100%;
+    }
+
+    .stat-card:hover {
+      transform: translateY(-4px);
+      border-color: var(--accent);
+      box-shadow: 0 8px 24px rgba(56, 189, 248, 0.2);
     }
 
     .stat-label {
       color: var(--muted);
-      margin-bottom: 4px;
+      margin-bottom: 8px;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
     }
 
     .stat-value {
-      font-size: 18px;
+      font-size: 32px;
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--accent), #0ea5e9);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1;
+    }
+
+    .stat-icon {
+      font-size: 24px;
+      margin-bottom: 8px;
+      opacity: 0.7;
+    }
+
+    .section-title {
+      font-size: 16px;
       font-weight: 600;
+      margin-bottom: 16px;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .section-title::before {
+      content: "";
+      width: 4px;
+      height: 20px;
+      background: linear-gradient(180deg, var(--accent), #0ea5e9);
+      border-radius: 2px;
+    }
+
+    .courses-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .course-card {
+      padding: 20px;
+      border-radius: 12px;
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid rgba(148, 163, 184, 0.3);
+      transition: all 0.3s ease;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .course-card::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 4px;
+      height: 100%;
+      background: var(--accent);
+      transform: scaleY(0);
+      transition: transform 0.3s ease;
+    }
+
+    .course-card:hover {
+      transform: translateX(4px);
+      border-color: var(--accent);
+      box-shadow: 0 4px 16px rgba(56, 189, 248, 0.15);
+    }
+
+    .course-card:hover::after {
+      transform: scaleY(1);
+    }
+
+    .course-title {
+      color: var(--accent);
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      display: block;
+    }
+
+    .course-meta {
+      font-size: 11px;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+
+    .progress-bar-container {
+      margin-top: 12px;
+      height: 8px;
+      background: rgba(15, 23, 42, 0.5);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), #0ea5e9);
+      border-radius: 999px;
+      transition: width 1s ease;
+      box-shadow: 0 0 8px rgba(56, 189, 248, 0.5);
+    }
+
+    .btn {
+      padding: 8px 16px;
+      border-radius: 8px;
+      border: none;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-decoration: none;
+      display: inline-block;
+      text-align: center;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent), #0ea5e9);
+      color: #0b1120;
+      box-shadow: 0 4px 12px rgba(56, 189, 248, 0.3);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(56, 189, 248, 0.4);
+    }
+
+    .btn-secondary {
+      background: rgba(56, 189, 248, 0.1);
+      color: var(--accent);
+      border: 1px solid var(--accent);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(56, 189, 248, 0.2);
+    }
+
+    .btn-success {
+      background: rgba(74, 222, 128, 0.2);
+      color: var(--success);
+      border: 1px solid var(--success);
+    }
+
+    .btn-success:hover {
+      background: rgba(74, 222, 128, 0.3);
+    }
+
+    .quiz-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 10px;
+      font-weight: 600;
+      margin-top: 8px;
+    }
+
+    .quiz-available {
+      background: rgba(251, 191, 36, 0.2);
+      color: var(--warning);
+      border: 1px solid var(--warning);
+    }
+
+    .quiz-completed {
+      background: rgba(74, 222, 128, 0.2);
+      color: var(--success);
+      border: 1px solid var(--success);
+    }
+
+    .available-courses {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 16px;
+    }
+
+    .available-course-card {
+      padding: 16px;
+      border-radius: 12px;
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid rgba(148, 163, 184, 0.3);
+      transition: all 0.3s ease;
+    }
+
+    .available-course-card:hover {
+      border-color: var(--accent);
+      box-shadow: 0 4px 16px rgba(56, 189, 248, 0.15);
     }
 
     .footer {
-      margin-top: 6px;
+      margin-top: 32px;
+      padding-top: 20px;
+      border-top: 1px solid rgba(148, 163, 184, 0.2);
       font-size: 11px;
       color: var(--muted);
       display: flex;
@@ -148,86 +397,321 @@
     a {
       color: var(--accent);
       text-decoration: none;
+      transition: all 0.2s ease;
     }
 
     a:hover {
+      color: #0ea5e9;
       text-decoration: underline;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--muted);
+    }
+
+    .empty-state-icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+      opacity: 0.5;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .stat-card,
+    .course-card,
+    .available-course-card {
+      animation: fadeIn 0.5s ease forwards;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+    }
+
+    .tab {
+      padding: 12px 20px;
+      background: transparent;
+      border: none;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s ease;
+    }
+
+    .tab:hover {
+      color: var(--accent);
+    }
+
+    .tab.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
     }
   </style>
 </head>
 <body>
-  <div class="shell">
+  <div class="container">
     <div class="card">
       <div class="inner">
-        <div class="eyebrow">
-          <span class="eyebrow-dot"></span>
-          STUDENT DASHBOARD
-        </div>
-        <h1>Welcome, {{ student.first_name|default:student.username }} 👋</h1>
-        <p class="subtitle">
-          You’re now logged in as a <strong>student</strong>. This is a simple HTML landing page;
-          the real data API is at <code>/api/reports/dashboard/</code>.
-        </p>
-
-        <div class="pill-row">
-          <span class="pill">Role: student</span>
-          <span class="pill">User ID: {{ student.id }}</span>
-          <span class="pill">Username: {{ student.username }}</span>
-        </div>
-
-        <div class="grid">
-          <div class="stat">
-            <div class="stat-label">Enrolled courses</div>
-            <div class="stat-value">
-              {{ enrollments|length }}
-            </div>
+        <div class="header">
+          <div class="eyebrow">
+            <span class="eyebrow-dot"></span>
+            STUDENT DASHBOARD
           </div>
-          <div class="stat">
-            <div class="stat-label">How you logged in</div>
-            <div class="stat-value" style="font-size: 13px;">
-              Session (HTML form)
-            </div>
-          </div>
-          <div class="stat">
-            <div class="stat-label">API dashboard</div>
-            <div class="stat-value" style="font-size: 11px;">
-              GET /api/reports/dashboard/
-            </div>
+          <h1>Welcome, {{ student.first_name|default:student.username }} 👋</h1>
+          <p class="subtitle">
+            Track your learning progress, take assessments, and discover new courses.
+          </p>
+
+          <div class="pill-row">
+            <span class="pill">Role: student</span>
+            <span class="pill">User ID: {{ student.id }}</span>
+            <span class="pill">Username: {{ student.username }}</span>
           </div>
         </div>
 
-        {% if courses %}
-          <div style="margin-top: 12px; font-size: 12px; color: var(--muted);">
-            Your courses:
+        <div class="stats-grid">
+          <div class="stat-card" data-value="{{ total_enrollments }}">
+            <div class="stat-icon">📚</div>
+            <div class="stat-label">Enrolled Courses</div>
+            <div class="stat-value" id="stat-enrollments">0</div>
           </div>
-          <ul style="margin: 6px 0 0; padding-left: 18px; font-size: 13px;">
-            {% for course in courses %}
-              <li>
-                <strong>{{ course.title }}</strong>
-                {% if course.description %}
-                  – {{ course.description|truncatechars:80 }}
-                {% endif %}
-              </li>
-            {% endfor %}
-          </ul>
-        {% else %}
-          <div style="margin-top: 12px; font-size: 12px; color: var(--muted);">
-            You are not enrolled in any courses yet.
+          <div class="stat-card" data-value="{{ active_courses }}">
+            <div class="stat-icon">🔄</div>
+            <div class="stat-label">Active Courses</div>
+            <div class="stat-value" id="stat-active">0</div>
           </div>
-        {% endif %}
-
-        <div class="footer">
-          <span>
-            To test the JSON dashboard, call
-            <code>GET /api/reports/dashboard/</code> with your access token.
-          </span>
-          <span>
-            Go back to <a href="/student/login/">student login</a>.
-          </span>
+          <div class="stat-card" data-value="{{ completed_courses }}">
+            <div class="stat-icon">🎓</div>
+            <div class="stat-label">Completed</div>
+            <div class="stat-value" id="stat-completed">0</div>
+          </div>
         </div>
       </div>
     </div>
+
+    <div class="card">
+      <div class="inner">
+        <div class="tabs">
+          <button class="tab active" onclick="switchTab('my-courses')">My Courses</button>
+          <button class="tab" onclick="switchTab('available-courses')">Browse Courses</button>
+          <button class="tab" onclick="switchTab('assessments')">Assessments</button>
+        </div>
+
+        <div id="my-courses" class="tab-content active">
+          {% if enrollments_with_stats %}
+            <div class="section-title">Your Enrolled Courses</div>
+            <div class="courses-grid">
+              {% for item in enrollments_with_stats %}
+                <div class="course-card">
+                  <strong class="course-title">{{ item.course.title }}</strong>
+                  <div class="course-meta">
+                    <span>• {{ item.course.difficulty_level|capfirst }}</span>
+                    <span>• {{ item.course.duration_hours }}h</span>
+                    {% if item.course.instructor %}
+                      <span>• {{ item.course.instructor.first_name|default:item.course.instructor.username }}</span>
+                    {% endif %}
+                  </div>
+                  {% if item.course.description %}
+                    <div style="font-size: 12px; color: var(--muted); margin-bottom: 12px;">
+                      {{ item.course.description|truncatechars:100 }}
+                    </div>
+                  {% endif %}
+                  
+                  <div style="font-size: 11px; color: var(--muted); margin-bottom: 8px;">
+                    Progress: {{ item.completed_lessons }}/{{ item.total_lessons }} lessons
+                    ({{ item.progress_percentage }}%)
+                  </div>
+                  <div class="progress-bar-container">
+                    <div class="progress-bar" style="width: {{ item.progress_percentage }}%"></div>
+                  </div>
+
+                  {% if item.quiz %}
+                    <div style="margin-top: 12px;">
+                      {% if item.quiz_result %}
+                        <div class="quiz-badge quiz-completed">
+                          ✓ Quiz Completed: {{ item.quiz_result.percentage|floatformat:0 }}%
+                          {% if item.quiz_result.is_passed %}(Passed){% else %}(Failed){% endif %}
+                        </div>
+                        {% if item.quiz_result.attempt_number < item.quiz.max_attempts or item.quiz.max_attempts == 0 %}
+                          <a href="{% url 'take_quiz_page' item.quiz.id %}" class="btn btn-secondary" style="margin-top: 8px; display: inline-block;">
+                            Retake Quiz
+                          </a>
+                        {% endif %}
+                      {% else %}
+                        <div class="quiz-badge quiz-available">
+                          📝 Quiz Available
+                        </div>
+                        <a href="{% url 'take_quiz_page' item.quiz.id %}" class="btn btn-primary" style="margin-top: 8px; display: inline-block;">
+                          Take Quiz
+                        </a>
+                      {% endif %}
+                    </div>
+                  {% endif %}
+                </div>
+              {% endfor %}
+            </div>
+          {% else %}
+            <div class="empty-state">
+              <div class="empty-state-icon">📚</div>
+              <div>You are not enrolled in any courses yet.</div>
+              <div style="margin-top: 8px; font-size: 11px;">Browse available courses to get started!</div>
+            </div>
+          {% endif %}
+        </div>
+
+        <div id="available-courses" class="tab-content">
+          <div class="section-title">Available Courses</div>
+          {% if available_courses %}
+            <div class="available-courses">
+              {% for course in available_courses %}
+                <div class="available-course-card">
+                  <strong class="course-title">{{ course.title }}</strong>
+                  <div class="course-meta">
+                    <span>• {{ course.difficulty_level|capfirst }}</span>
+                    <span>• {{ course.duration_hours }}h</span>
+                    {% if course.instructor %}
+                      <span>• {{ course.instructor.first_name|default:course.instructor.username }}</span>
+                    {% endif %}
+                  </div>
+                  {% if course.description %}
+                    <div style="font-size: 12px; color: var(--muted); margin-bottom: 12px;">
+                      {{ course.description|truncatechars:120 }}
+                    </div>
+                  {% endif %}
+                  <a href="{% url 'enroll_course' course.id %}" class="btn btn-primary" style="width: 100%; margin-top: 8px;">
+                    Enroll Now
+                  </a>
+                </div>
+              {% endfor %}
+            </div>
+          {% else %}
+            <div class="empty-state">
+              <div class="empty-state-icon">🎓</div>
+              <div>No new courses available at the moment.</div>
+            </div>
+          {% endif %}
+        </div>
+
+        <div id="assessments" class="tab-content">
+          <div class="section-title">Quiz Results</div>
+          {% if quiz_results %}
+            <div class="courses-grid">
+              {% for result in quiz_results %}
+                <div class="course-card">
+                  <strong class="course-title">{{ result.quiz.title }}</strong>
+                  <div class="course-meta">
+                    <span>• Course: {{ result.quiz.course.title }}</span>
+                    <span>• Attempt: {{ result.attempt_number }}</span>
+                    <span>• Date: {{ result.started_at|date:"M d, Y" }}</span>
+                  </div>
+                  <div style="margin-top: 12px;">
+                    <div style="font-size: 14px; font-weight: 600; margin-bottom: 8px;">
+                      Score: {{ result.percentage|floatformat:1 }}%
+                      {% if result.is_passed %}
+                        <span style="color: var(--success);">✓ Passed</span>
+                      {% else %}
+                        <span style="color: var(--danger);">✗ Failed</span>
+                      {% endif %}
+                    </div>
+                    <div style="font-size: 11px; color: var(--muted);">
+                      Points: {{ result.score }}/{{ result.quiz.total_points }} • 
+                      Passing Score: {{ result.quiz.passing_score }}%
+                    </div>
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+          {% else %}
+            <div class="empty-state">
+              <div class="empty-state-icon">📝</div>
+              <div>No quiz results yet.</div>
+              <div style="margin-top: 8px; font-size: 11px;">Complete quizzes from your enrolled courses to see results here.</div>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <span>
+        API endpoint: <code>/api/reports/dashboard/</code>
+      </span>
+      <span>
+        <a href="/student/login/">← Back to Login</a>
+      </span>
+    </div>
   </div>
+
+  <script>
+    // Animate counter values
+    function animateCounter(element, target, duration = 2000) {
+      const start = 0;
+      const increment = target / (duration / 16);
+      let current = start;
+
+      const timer = setInterval(() => {
+        current += increment;
+        if (current >= target) {
+          current = target;
+          clearInterval(timer);
+        }
+        element.textContent = Math.floor(current);
+      }, 16);
+    }
+
+    // Initialize counters
+    document.addEventListener('DOMContentLoaded', function() {
+      const statCards = document.querySelectorAll('.stat-card');
+      statCards.forEach(card => {
+        const target = parseInt(card.getAttribute('data-value')) || 0;
+        const valueElement = card.querySelector('.stat-value');
+        if (valueElement) {
+          animateCounter(valueElement, target);
+        }
+      });
+    });
+
+    // Tab switching
+    function switchTab(tabName) {
+      // Hide all tab contents
+      document.querySelectorAll('.tab-content').forEach(content => {
+        content.classList.remove('active');
+      });
+      
+      // Remove active class from all tabs
+      document.querySelectorAll('.tab').forEach(tab => {
+        tab.classList.remove('active');
+      });
+      
+      // Show selected tab content
+      document.getElementById(tabName).classList.add('active');
+      
+      // Add active class to clicked tab
+      event.target.classList.add('active');
+    }
+  </script>
 </body>
 </html>
-

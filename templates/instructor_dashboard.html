@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Instructor Dashboard | LMS Lite</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <style>
     :root {
       --bg: #020617;
@@ -12,6 +13,9 @@
       --accent-soft: rgba(167, 139, 250, 0.25);
       --text: #e5e7eb;
       --muted: #9ca3af;
+      --success: #4ade80;
+      --warning: #fbbf24;
+      --danger: #f97373;
     }
 
     * {
@@ -21,18 +25,19 @@
     body {
       margin: 0;
       min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      padding: 24px;
       background: radial-gradient(circle at top, #1f2937, var(--bg) 55%, #000 100%);
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       color: var(--text);
     }
 
-    .shell {
-      width: 100%;
-      max-width: 900px;
-      padding: 24px;
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .header {
+      margin-bottom: 24px;
     }
 
     .card {
@@ -42,9 +47,17 @@
       box-shadow:
         0 24px 70px rgba(15, 23, 42, 0.9),
         0 0 0 1px rgba(15, 23, 42, 0.9);
-      padding: 22px 22px 20px;
+      padding: 24px;
       position: relative;
       overflow: hidden;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-2px);
+      box-shadow:
+        0 28px 80px rgba(15, 23, 42, 0.95),
+        0 0 0 1px rgba(167, 139, 250, 0.3);
     }
 
     .card::before {
@@ -71,7 +84,7 @@
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      margin-bottom: 4px;
+      margin-bottom: 8px;
     }
 
     .eyebrow-dot {
@@ -80,16 +93,26 @@
       border-radius: 999px;
       background: var(--accent);
       box-shadow: 0 0 0 3px var(--accent-soft);
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
     }
 
     h1 {
-      margin: 0 0 4px;
-      font-size: 24px;
+      margin: 0 0 8px;
+      font-size: 28px;
       letter-spacing: -0.03em;
+      background: linear-gradient(135deg, var(--text), var(--accent));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
     }
 
     .subtitle {
-      margin: 0 0 18px;
+      margin: 0 0 20px;
       font-size: 13px;
       color: var(--muted);
     }
@@ -98,81 +121,231 @@
       display: flex;
       flex-wrap: wrap;
       gap: 8px;
-      margin-bottom: 16px;
+      margin-bottom: 20px;
     }
 
     .pill {
-      padding: 5px 10px;
+      padding: 6px 12px;
       border-radius: 999px;
       border: 1px solid rgba(148, 163, 184, 0.6);
       background: rgba(15, 23, 42, 0.85);
       font-size: 11px;
       color: var(--muted);
+      transition: all 0.2s ease;
     }
 
-    .grid {
+    .pill:hover {
+      border-color: var(--accent);
+      background: rgba(167, 139, 250, 0.1);
+      color: var(--accent);
+    }
+
+    .stats-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-      gap: 10px;
-      margin-bottom: 14px;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
     }
 
-    .stat {
+    .stat-card {
       border-radius: 12px;
-      padding: 10px 11px;
+      padding: 16px;
       background: rgba(15, 23, 42, 0.85);
       border: 1px solid rgba(148, 163, 184, 0.45);
-      font-size: 12px;
+      transition: all 0.3s ease;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .stat-card::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(167, 139, 250, 0.1), transparent);
+      transition: left 0.5s ease;
+    }
+
+    .stat-card:hover::before {
+      left: 100%;
+    }
+
+    .stat-card:hover {
+      transform: translateY(-4px);
+      border-color: var(--accent);
+      box-shadow: 0 8px 24px rgba(167, 139, 250, 0.2);
     }
 
     .stat-label {
       color: var(--muted);
-      margin-bottom: 4px;
+      margin-bottom: 8px;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
     }
 
     .stat-value {
-      font-size: 18px;
+      font-size: 32px;
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--accent), #8b5cf6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1;
+    }
+
+    .stat-icon {
+      font-size: 24px;
+      margin-bottom: 8px;
+      opacity: 0.7;
+    }
+
+    .chart-container {
+      margin: 24px 0;
+      padding: 20px;
+      background: rgba(15, 23, 42, 0.5);
+      border-radius: 12px;
+      border: 1px solid rgba(148, 163, 184, 0.2);
+    }
+
+    .chart-title {
+      font-size: 14px;
       font-weight: 600;
+      margin-bottom: 16px;
+      color: var(--text);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
     }
 
     .courses-section {
-      margin-top: 20px;
+      margin-top: 24px;
     }
 
     .section-title {
-      font-size: 14px;
+      font-size: 16px;
       font-weight: 600;
-      margin-bottom: 10px;
+      margin-bottom: 16px;
       color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .section-title::before {
+      content: "";
+      width: 4px;
+      height: 20px;
+      background: linear-gradient(180deg, var(--accent), #8b5cf6);
+      border-radius: 2px;
     }
 
     .course-list {
       list-style: none;
       padding: 0;
       margin: 0;
+      display: grid;
+      gap: 12px;
     }
 
     .course-item {
-      padding: 10px 12px;
-      margin-bottom: 8px;
-      border-radius: 10px;
+      padding: 16px;
+      border-radius: 12px;
       background: rgba(15, 23, 42, 0.85);
       border: 1px solid rgba(148, 163, 184, 0.3);
       font-size: 13px;
+      transition: all 0.3s ease;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .course-item::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 4px;
+      height: 100%;
+      background: var(--accent);
+      transform: scaleY(0);
+      transition: transform 0.3s ease;
+    }
+
+    .course-item:hover {
+      transform: translateX(4px);
+      border-color: var(--accent);
+      box-shadow: 0 4px 16px rgba(167, 139, 250, 0.15);
+    }
+
+    .course-item:hover::after {
+      transform: scaleY(1);
     }
 
     .course-item strong {
       color: var(--accent);
+      font-size: 15px;
+      display: block;
+      margin-bottom: 8px;
     }
 
     .course-meta {
       font-size: 11px;
       color: var(--muted);
-      margin-top: 4px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .course-meta span {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .status-badge {
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .status-published {
+      background: rgba(74, 222, 128, 0.2);
+      color: var(--success);
+      border: 1px solid rgba(74, 222, 128, 0.3);
+    }
+
+    .status-draft {
+      background: rgba(156, 163, 175, 0.2);
+      color: var(--muted);
+      border: 1px solid rgba(156, 163, 175, 0.3);
+    }
+
+    .progress-bar-container {
+      margin-top: 12px;
+      height: 6px;
+      background: rgba(15, 23, 42, 0.5);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), #8b5cf6);
+      border-radius: 999px;
+      transition: width 1s ease;
+      box-shadow: 0 0 8px rgba(167, 139, 250, 0.5);
     }
 
     .footer {
-      margin-top: 20px;
+      margin-top: 32px;
+      padding-top: 20px;
+      border-top: 1px solid rgba(148, 163, 184, 0.2);
       font-size: 11px;
       color: var(--muted);
       display: flex;
@@ -184,95 +357,268 @@
     a {
       color: var(--accent);
       text-decoration: none;
+      transition: all 0.2s ease;
     }
 
     a:hover {
+      color: #8b5cf6;
       text-decoration: underline;
     }
+
+    .refresh-btn {
+      margin-top: 16px;
+      padding: 8px 16px;
+      background: rgba(167, 139, 250, 0.1);
+      border: 1px solid var(--accent);
+      border-radius: 8px;
+      color: var(--accent);
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .refresh-btn:hover {
+      background: rgba(167, 139, 250, 0.2);
+      transform: scale(1.05);
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--muted);
+    }
+
+    .empty-state-icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+      opacity: 0.5;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .stat-card,
+    .course-item {
+      animation: fadeIn 0.5s ease forwards;
+    }
+
+    .stat-card:nth-child(1) { animation-delay: 0.1s; }
+    .stat-card:nth-child(2) { animation-delay: 0.2s; }
+    .stat-card:nth-child(3) { animation-delay: 0.3s; }
+    .stat-card:nth-child(4) { animation-delay: 0.4s; }
+    .stat-card:nth-child(5) { animation-delay: 0.5s; }
   </style>
 </head>
 <body>
-  <div class="shell">
+  <div class="container">
     <div class="card">
       <div class="inner">
-        <div class="eyebrow">
-          <span class="eyebrow-dot"></span>
-          INSTRUCTOR DASHBOARD
-        </div>
-        <h1>Welcome, {{ instructor.first_name|default:instructor.username }} 👋</h1>
-        <p class="subtitle">
-          You're now logged in as an <strong>instructor</strong>. This is a simple HTML landing page;
-          the real data API is at <code>/api/reports/dashboard/</code>.
-        </p>
+        <div class="header">
+          <div class="eyebrow">
+            <span class="eyebrow-dot"></span>
+            INSTRUCTOR DASHBOARD
+          </div>
+          <h1>Welcome, {{ instructor.first_name|default:instructor.username }} 👋</h1>
+          <p class="subtitle">
+            Monitor your courses, track enrollments, and analyze student engagement.
+          </p>
 
-        <div class="pill-row">
-          <span class="pill">Role: instructor</span>
-          <span class="pill">User ID: {{ instructor.id }}</span>
-          <span class="pill">Username: {{ instructor.username }}</span>
+          <div class="pill-row">
+            <span class="pill">Role: instructor</span>
+            <span class="pill">User ID: {{ instructor.id }}</span>
+            <span class="pill">Username: {{ instructor.username }}</span>
+          </div>
         </div>
 
-        <div class="grid">
-          <div class="stat">
+        <div class="stats-grid">
+          <div class="stat-card" data-value="{{ total_courses }}">
+            <div class="stat-icon">📚</div>
             <div class="stat-label">Total Courses</div>
-            <div class="stat-value">{{ total_courses }}</div>
+            <div class="stat-value" id="stat-total-courses">0</div>
           </div>
-          <div class="stat">
+          <div class="stat-card" data-value="{{ published_courses }}">
+            <div class="stat-icon">✅</div>
             <div class="stat-label">Published Courses</div>
-            <div class="stat-value">{{ published_courses }}</div>
+            <div class="stat-value" id="stat-published-courses">0</div>
           </div>
-          <div class="stat">
+          <div class="stat-card" data-value="{{ total_enrollments }}">
+            <div class="stat-icon">👥</div>
             <div class="stat-label">Total Enrollments</div>
-            <div class="stat-value">{{ total_enrollments }}</div>
+            <div class="stat-value" id="stat-total-enrollments">0</div>
           </div>
-          <div class="stat">
+          <div class="stat-card" data-value="{{ active_enrollments }}">
+            <div class="stat-icon">🔄</div>
             <div class="stat-label">Active Enrollments</div>
-            <div class="stat-value">{{ active_enrollments }}</div>
+            <div class="stat-value" id="stat-active-enrollments">0</div>
           </div>
-          <div class="stat">
+          <div class="stat-card" data-value="{{ completed_enrollments }}">
+            <div class="stat-icon">🎓</div>
             <div class="stat-label">Completed</div>
-            <div class="stat-value">{{ completed_enrollments }}</div>
+            <div class="stat-value" id="stat-completed-enrollments">0</div>
           </div>
         </div>
 
-        {% if courses %}
+        {% if total_enrollments > 0 %}
+        <div class="chart-container">
+          <div class="chart-title">Enrollment Overview</div>
+          <canvas id="enrollmentChart"></canvas>
+        </div>
+        {% endif %}
+
+        {% if courses_with_stats %}
           <div class="courses-section">
             <div class="section-title">Your Courses</div>
             <ul class="course-list">
-              {% for course in courses %}
+              {% for item in courses_with_stats %}
                 <li class="course-item">
-                  <strong>{{ course.title }}</strong>
+                  <strong>{{ item.course.title }}</strong>
                   <div class="course-meta">
-                    {% if course.is_published %}
-                      <span style="color: #4ade80;">● Published</span>
-                    {% else %}
-                      <span style="color: var(--muted);">● Draft</span>
-                    {% endif %}
-                    • {{ course.difficulty_level|capfirst }} • Created: {{ course.created_at|date:"M d, Y" }}
-                    {% if course.description %}
-                      <br>{{ course.description|truncatechars:100 }}
+                    <span class="status-badge {% if item.course.is_published %}status-published{% else %}status-draft{% endif %}">
+                      {% if item.course.is_published %}● Published{% else %}● Draft{% endif %}
+                    </span>
+                    <span>• {{ item.course.difficulty_level|capfirst }}</span>
+                    <span>• Created: {{ item.course.created_at|date:"M d, Y" }}</span>
+                    {% if item.total_enrollments > 0 %}
+                      <span>• {{ item.total_enrollments }} enrollment{{ item.total_enrollments|pluralize }}</span>
                     {% endif %}
                   </div>
+                  {% if item.course.description %}
+                    <div style="margin-top: 8px; font-size: 12px; color: var(--muted);">
+                      {{ item.course.description|truncatechars:120 }}
+                    </div>
+                  {% endif %}
+                  {% if item.total_enrollments > 0 %}
+                    <div style="margin-top: 12px; font-size: 11px; color: var(--muted);">
+                      Completion Rate: {{ item.completed_enrollments }}/{{ item.total_enrollments }} ({{ item.completion_rate|floatformat:0 }}%)
+                    </div>
+                    <div class="progress-bar-container">
+                      <div class="progress-bar" style="width: {{ item.completion_rate }}%"></div>
+                    </div>
+                  {% endif %}
                 </li>
               {% endfor %}
             </ul>
           </div>
         {% else %}
-          <div style="margin-top: 12px; font-size: 12px; color: var(--muted);">
-            You haven't created any courses yet.
+          <div class="empty-state">
+            <div class="empty-state-icon">📚</div>
+            <div>You haven't created any courses yet.</div>
+            <div style="margin-top: 8px; font-size: 11px;">Start by creating your first course!</div>
           </div>
         {% endif %}
 
         <div class="footer">
           <span>
-            To test the JSON dashboard, call
-            <code>GET /api/reports/dashboard/</code> with your access token.
+            API endpoint: <code>/api/reports/dashboard/</code>
           </span>
           <span>
-            Go back to <a href="/instructor/login/">instructor login</a>.
+            <a href="/instructor/login/">← Back to Login</a>
           </span>
         </div>
       </div>
     </div>
   </div>
+
+  <script>
+    // Animate counter values
+    function animateCounter(element, target, duration = 2000) {
+      const start = 0;
+      const increment = target / (duration / 16);
+      let current = start;
+
+      const timer = setInterval(() => {
+        current += increment;
+        if (current >= target) {
+          current = target;
+          clearInterval(timer);
+        }
+        element.textContent = Math.floor(current);
+      }, 16);
+    }
+
+    // Initialize counters
+    document.addEventListener('DOMContentLoaded', function() {
+      const statCards = document.querySelectorAll('.stat-card');
+      statCards.forEach(card => {
+        const target = parseInt(card.getAttribute('data-value')) || 0;
+        const valueElement = card.querySelector('.stat-value');
+        if (valueElement) {
+          animateCounter(valueElement, target);
+        }
+      });
+
+      // Create enrollment chart
+      {% if total_enrollments > 0 %}
+      const ctx = document.getElementById('enrollmentChart');
+      if (ctx) {
+        new Chart(ctx, {
+          type: 'doughnut',
+          data: {
+            labels: ['Active Enrollments', 'Completed Enrollments'],
+            datasets: [{
+              data: [{{ active_enrollments }}, {{ completed_enrollments }}],
+              backgroundColor: [
+                'rgba(167, 139, 250, 0.8)',
+                'rgba(74, 222, 128, 0.8)'
+              ],
+              borderColor: [
+                'rgba(167, 139, 250, 1)',
+                'rgba(74, 222, 128, 1)'
+              ],
+              borderWidth: 2
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+              legend: {
+                position: 'bottom',
+                labels: {
+                  color: '#e5e7eb',
+                  padding: 15,
+                  font: {
+                    size: 12
+                  }
+                }
+              },
+              tooltip: {
+                backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                titleColor: '#e5e7eb',
+                bodyColor: '#e5e7eb',
+                borderColor: 'rgba(167, 139, 250, 0.5)',
+                borderWidth: 1,
+                padding: 12
+              }
+            }
+          }
+        });
+      }
+      {% endif %}
+
+      // Add click handlers for stat cards
+      statCards.forEach(card => {
+        card.addEventListener('click', function() {
+          this.style.transform = 'scale(0.98)';
+          setTimeout(() => {
+            this.style.transform = '';
+          }, 150);
+        });
+      });
+    });
+
+    // Refresh functionality
+    function refreshDashboard() {
+      location.reload();
+    }
+  </script>
 </body>
 </html>
